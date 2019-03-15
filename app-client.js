@@ -122,7 +122,7 @@ class App extends Component {
   };
 
   render() {
-    const data = this.state.data;
+    const { data } = this.state;
     let form_input;
     if (!data.author) {
       form_input = (
@@ -164,7 +164,7 @@ class App extends Component {
     return (
       <div>
         <div style={ S('pl-15') }>
-          <h2>React Chat App</h2>
+          <h2>Chat Box!</h2>
           <div ref="messages_scroll_area" style={ scroll_area_style }>
             <ul style={ S('p-0') }>{ messages_list }</ul>
           </div>
