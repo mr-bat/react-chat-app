@@ -20,7 +20,7 @@ loaders.push(js_loaders)
 // Development loaders
 if(process.env.NODE_ENV === 'development'){
   var es_lint = {
-    test: /\.js$/, 
+    test: /\.js$/,
     loader: 'eslint-loader',
     exclude: /node_modules/
   }
@@ -39,7 +39,6 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.COSMIC_BUCKET': JSON.stringify(process.env.COSMIC_BUCKET),
       'process.env.APP_URL': JSON.stringify(process.env.APP_URL)
     })
  ]

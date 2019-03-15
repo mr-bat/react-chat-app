@@ -1,58 +1,48 @@
-/* eslint-disable camelcase,new-cap */
-// app-client.js
+/* eslint-disable camelcase,new-cap,react/jsx-no-bind,no-undef */
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import Cosmic from 'cosmicjs';
 import io from 'socket.io-client';
-import config from './config';
-import uuid from 'node-uuid';
 import S from 'shorti';
 import _ from 'lodash';
-import { Input } from 'react-bootstrap';
+import { Input, Button } from 'react-bootstrap';
 
 class App extends Component {
 
   constructor(props) {
     super(props);
+    const socket = io('http://localhost:3000');
     this.state = {
       data: {
         messages: [],
       },
+      socket,
     };
   }
 
   componentDidMount() {
-    let data = this.state.data;
     setTimeout(() => {
       this.refs.author.refs.input.focus();
     }, 100);
-    const socket = io();
-    Cosmic.getObjects(config, (err, res) => {
-      const messages = res.objects.type.messages;
-      if (messages) {
-        messages.reverse();
-        this.setState({
-          data: {
-            author: data.author,
-            messages,
-          },
-        });
-      }
-    });
     // Listen for messages coming in
-    socket.on('chat message', message => {
-      data = this.state.data;
-      const messages = this.state.data.messages;
-      if (data.author !== message.metafield.author.value) {
+    this.state.socket.on('chat message', message => {
+      if (this.state.data.author) {
+        const messages = this.state.data.messages;
         messages.push(message);
         this.setState({
           data: {
-            author: data.author,
+            author: this.state.data.author,
             messages,
           },
         });
       }
     });
+    this.state.socket.on('test', d => console.log(d));
+    this.state.socket.on('receive messages', messages => this.setState({
+      data: {
+        author: this.state.data.author,
+        messages,
+      },
+    }));
   }
 
   componentDidUpdate() {
@@ -64,7 +54,7 @@ class App extends Component {
     }
   }
 
-  setAuthor() {
+  setAuthor = () => {
     const author = this.refs.author.refs.input.value.trim();
     if (!author) return;
     this.refs.author.refs.input.value = '';
@@ -75,12 +65,11 @@ class App extends Component {
         messages,
       },
     });
+    this.state.socket.emit('request messages', new Date('2008'));
   }
 
-  createMessage() {
+  createMessage = () => {
     const data = this.state.data;
-    const messages = data.messages;
-    const socket = io();
     const message_text = this.refs.message.refs.input.value.trim();
     if (!message_text) return;
     const message_emit = {
@@ -88,26 +77,7 @@ class App extends Component {
       author: data.author,
     };
     // Send message out
-    socket.emit('chat message', message_emit);
-    // Render to browser
-    const message_browser = {
-      _id: uuid.v1(),
-      metafield: {
-        author: {
-          value: data.author,
-        },
-        message: {
-          value: message_text,
-        },
-      },
-    };
-    messages.push(message_browser);
-    this.setState({
-      data: {
-        author: data.author,
-        messages,
-      },
-    });
+    this.state.socket.emit('chat message', message_emit);
     this.refs.message.refs.input.value = '';
   }
 
@@ -144,14 +114,29 @@ class App extends Component {
     if (messages) {
       // order by created
       const sorted_messages = _.sortBy(messages, message => {
-        return message.created;
+        return message.createdAt;
       });
       messages_list = sorted_messages.map(message_object => {
         if (message_object) {
           return (
-            <li style={ { listStyle: 'none', ...S('mb-5') } } key={ message_object._id }>
-              <b>{ message_object.metafield.author.value }</b><br/>
-              { message_object.metafield.message.value }
+            <li style={{
+              listStyle: 'none',
+              ...S('mb-5'),
+              display: 'flex',
+              flexDirection: 'row',
+            }} key={ message_object._id }
+            >
+              {message_object.author === this.state.data.author &&
+                <Button onClick={(e) => {
+                  e.preventDefault();
+                  this.state.socket.emit('remove chat', message_object._id);
+                }}
+                >-</Button>
+              }
+              <div style={{ marginLeft: '10px' }}>
+                <b>{ message_object.author }</b><br/>
+                { message_object.message }
+              </div>
             </li>
           );
         }
