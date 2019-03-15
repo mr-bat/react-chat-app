@@ -1,149 +1,151 @@
+/* eslint-disable camelcase,new-cap */
 // app-client.js
-import React, { Component } from 'react'
-import { render } from 'react-dom'
-import Cosmic from 'cosmicjs'
-import io from 'socket.io-client'
-import config from './config'
-import uuid from 'node-uuid'
-import S from 'shorti'
-import _ from 'lodash'
-import { Input } from 'react-bootstrap'
+import React, { Component } from 'react';
+import { render } from 'react-dom';
+import Cosmic from 'cosmicjs';
+import io from 'socket.io-client';
+import config from './config';
+import uuid from 'node-uuid';
+import S from 'shorti';
+import _ from 'lodash';
+import { Input } from 'react-bootstrap';
 
 class App extends Component {
 
-  constructor() {
-    super()
+  constructor(props) {
+    super(props);
     this.state = {
       data: {
-        messages: []
-      }
-    }
+        messages: [],
+      },
+    };
   }
 
   componentDidMount() {
-    let data = this.state.data
+    let data = this.state.data;
     setTimeout(() => {
-      this.refs.author.refs.input.focus()
-    }, 100)
-    const socket = io()
+      this.refs.author.refs.input.focus();
+    }, 100);
+    const socket = io();
     Cosmic.getObjects(config, (err, res) => {
-      const messages = res.objects.type.messages
+      const messages = res.objects.type.messages;
       if (messages) {
-        messages.reverse()
+        messages.reverse();
         this.setState({
           data: {
             author: data.author,
-            messages
-          }
-        })
+            messages,
+          },
+        });
       }
-    })
+    });
     // Listen for messages coming in
     socket.on('chat message', message => {
-      data = this.state.data
-      const messages = this.state.data.messages
+      data = this.state.data;
+      const messages = this.state.data.messages;
       if (data.author !== message.metafield.author.value) {
-        messages.push(message)
+        messages.push(message);
         this.setState({
           data: {
             author: data.author,
-            messages
-          }
-        })
+            messages,
+          },
+        });
       }
-    })
+    });
   }
 
   componentDidUpdate() {
-    if (this.refs.message)
-      this.refs.message.refs.input.focus()
-    if (this.refs.messages_scroll_area)
-      this.refs.messages_scroll_area.scrollTop = this.refs.messages_scroll_area.scrollHeight
+    if (this.refs.message) {
+      this.refs.message.refs.input.focus();
+    }
+    if (this.refs.messages_scroll_area) {
+      this.refs.messages_scroll_area.scrollTop = this.refs.messages_scroll_area.scrollHeight;
+    }
   }
 
   setAuthor() {
-    const author = this.refs.author.refs.input.value.trim()
-    if (!author)
-      return
-    this.refs.author.refs.input.value = ''
-    const messages = this.state.data.messages
+    const author = this.refs.author.refs.input.value.trim();
+    if (!author) return;
+    this.refs.author.refs.input.value = '';
+    const messages = this.state.data.messages;
     this.setState({
       data: {
         author,
-        messages
-      }
-    })
+        messages,
+      },
+    });
   }
 
   createMessage() {
-    const data = this.state.data
-    const messages = data.messages
-    const socket = io()
-    const message_text = this.refs.message.refs.input.value.trim()
-    if (!message_text)
-      return
+    const data = this.state.data;
+    const messages = data.messages;
+    const socket = io();
+    const message_text = this.refs.message.refs.input.value.trim();
+    if (!message_text) return;
     const message_emit = {
       message: message_text,
-      author: data.author
-    }
+      author: data.author,
+    };
     // Send message out
-    socket.emit('chat message', message_emit)
+    socket.emit('chat message', message_emit);
     // Render to browser
     const message_browser = {
       _id: uuid.v1(),
       metafield: {
         author: {
-          value: data.author
+          value: data.author,
         },
         message: {
-          value: message_text
-        }
-      }
-    }
-    messages.push(message_browser)
+          value: message_text,
+        },
+      },
+    };
+    messages.push(message_browser);
     this.setState({
       data: {
         author: data.author,
-        messages
-      }
-    })
-    this.refs.message.refs.input.value = ''
+        messages,
+      },
+    });
+    this.refs.message.refs.input.value = '';
   }
 
-  handleSubmit(e) {
-    e.preventDefault()
-    const data = this.state.data
-    if (data.author)
-      this.createMessage()
-    else
-      this.setAuthor()
-  }
+  handleSubmit = (e) => {
+    e.preventDefault();
+    const data = this.state.data;
+    if (data.author) {
+      this.createMessage();
+    } else {
+      this.setAuthor();
+    }
+  };
 
   render() {
-    const data = this.state.data
-    let form_input
+    const data = this.state.data;
+    let form_input;
     if (!data.author) {
       form_input = (
         <div>
           Hi, what is your name?<br />
           <Input type="text" ref="author" />
         </div>
-      )
+      );
     } else {
       form_input = (
         <div>
           Hello { data.author }, type a message:<br />
           <Input type="text" ref="message" />
         </div>
-      )
+      );
     }
-    const messages = data.messages
-    let messages_list
+    const messages = data.messages;
+    let messages_list;
     if (messages) {
       // order by created
       const sorted_messages = _.sortBy(messages, message => {
-        return message.created
-      })
+        return message.created;
+      });
       messages_list = sorted_messages.map(message_object => {
         if (message_object) {
           return (
@@ -151,14 +153,14 @@ class App extends Component {
               <b>{ message_object.metafield.author.value }</b><br/>
               { message_object.metafield.message.value }
             </li>
-          )
+          );
         }
-      })
+      });
     }
     const scroll_area_style = {
       ...S('h-' + (window.innerHeight - 140)),
-      overflowY: 'scroll'
-    }
+      overflowY: 'scroll',
+    };
     return (
       <div>
         <div style={ S('pl-15') }>
@@ -168,13 +170,13 @@ class App extends Component {
           </div>
         </div>
         <div style={ S('absolute b-0 w-100p pl-15 pr-15') }>
-          <form onSubmit={ this.handleSubmit.bind(this) }>
+          <form onSubmit={ this.handleSubmit }>
             { form_input }
           </form>
         </div>
       </div>
-    )
+    );
   }
 }
-const app = document.getElementById('app')
-render(<App />, app)
+const app = document.getElementById('app');
+render(<App />, app);
